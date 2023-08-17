@@ -53,12 +53,17 @@ function calc() {
     // Use the match function to find all matches in the input string
     const tokens = cleanedInput.match(tokenPattern);
 
+    //regex
     const numRegEx = /-?\d+(\.\d+)?/g;
     const funcRegEx = /[a-z]+\s*/gi;
-    const opRegEx = /[\+\-\*\/\^]/g;
+    const opRegEx = /[\+\-\*\/\^\×\÷]/g;
     const commaRegEx = /,/g;
     const leftParenRegEx = /\(/g;
     const rightParenRegEx = /\)/g;
+
+    //operator associations and precendence
+    const assoc = {  "^" : "right",  "*" : "left",  "/" : "left",  "÷": "left", "×": "left", "+" : "left",  "-" : "left" };
+    const prec = {  "^" : 4,  "*" : 3,  "/" : 3, "÷": 3, "×": 3, "+" : 2,  "-" : 2 };
     
     // while there are tokens to be read:
     while (tokens && tokens.length) {
@@ -74,35 +79,56 @@ function calc() {
             operatorStack.push(elem);
         } else if (elem.match(opRegEx)) {
             // - an operator o1:
-            //     while (
-            //         there is an operator o2 at the top of the operator stack which is not a left parenthesis, 
-            //         and (o2 has greater precedence than o1 or (o1 and o2 have the same precedence and o1 is left-associative))
-            //     ):
-            //         pop o2 from the operator stack into the output queue
-            //     push o1 onto the operator stack
+            //a. while there is an Operator token o at the top of the operator stack and either t is left-associative 
+            // and has precedence is less than or equal to that of o, or t is right associative, and has precedence less
+            // than that of o
+            while(operatorStack.peek() && (assoc[elem] === 'left' && prec[elem] <= prec[operatorStack.peek()]) || (assoc[elem] === 'right' && prec[elem] < prec[operatorStack.peek()])) {
+                //pop o off the operator stack, onto the output queue;
+                outQue.push(operatorStack.pop());
+            }
+            // b. at the end of iteration push t onto the operator stack.
+            operatorStack.push(elem);
         } else if (elem.match(commaRegEx)) {
             // - a ",":
             //     while the operator at the top of the operator stack is not a left parenthesis:
-            //          pop the operator from the operator stack into the output queue 
+            while(!operatorStack.peek().match(leftParenRegEx)) {
+                // pop the operator from the operator stack into the output queue
+                outQue.push(operatorStack.pop());
+            }
         } else if (elem.match(leftParenRegEx)) {
-            // - a left parenthesis (i.e. "("):
-            //     push it onto the operator stack
+            // - a left parenthesis (i.e. "("): push it onto the operator stack
+            operatorStack.push(elem)
         } else if (elem.match(rightParenRegEx)) {
             // - a right parenthesis (i.e. ")"):
             //     while the operator at the top of the operator stack is not a left parenthesis:
             //         {assert the operator stack is not empty}
-            //         /* If the stack runs out without finding a left parenthesis, then there are mismatched parentheses. */
-            //         pop the operator from the operator stack into the output queue
-            //     {assert there is a left parenthesis at the top of the operator stack}
-            //     pop the left parenthesis from the operator stack and discard it
-            //     if there is a function token at the top of the operator stack, then:
-            //         pop the function from the operator stack into the output queue
+            while(!operatorStack.peek().match(leftParenRegEx)) {
+                // /* If the stack runs out without finding a left parenthesis, then there are mismatched parentheses. */
+                if (operatorStack.isEmpty()) throw Error('Mismatched parenthesis. Input invalid.');
+                // pop the operator from the operator stack into the output queue
+                outQue.push(operatorStack.pop());
+            }   
+            // {assert there is a left parenthesis at the top of the operator stack}
+            if (operatorStack.peek().match(leftParenRegEx)) {
+                // pop the left parenthesis from the operator stack and discard it
+                operatorStack.pop();
+            } else if (operatorStack.peek().match(funcRegEx)) {
+                // if there is a function token at the top of the operator stack, then:
+                // pop the function from the operator stack into the output queue
+                outQue.push(operatorStack.pop());
+            }
         }
-
     }
     // /* After the while loop, pop the remaining items from the operator stack into the output queue. */
     // while there are tokens on the operator stack:
-    //     /* If the operator token on the top of the stack is a parenthesis, then there are mismatched parentheses. */
-    //     {assert the operator on top of the stack is not a (left) parenthesis}
-    //     pop the operator from the operator stack onto the output queue
+    while(!operatorStack.isEmpty()) {
+        // /* If the operator token on the top of the stack is a parenthesis, then there are mismatched parentheses. */
+        // {assert the operator on top of the stack is not a (left) parenthesis}
+        if (operatorStack.peek().match(leftParenRegEx) || operatorStack.peek().match(rightParenRegEx)) throw Error('Mismatched parenthesis. Input invalid.');
+        // pop the operator from the operator stack onto the output queue
+        outQue.push(operatorStack.pop());
+    }
+    console.log(outQue, operatorStack);
+    const RPN = outQue.items.join(' ');
+    console.log('RPN', RPN);
 };
