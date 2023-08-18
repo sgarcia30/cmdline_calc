@@ -130,5 +130,29 @@ function calc() {
     }
     console.log(outQue, operatorStack);
     const RPN = outQue.items.join(' ');
-    console.log('RPN', RPN);
+    const rpnArr = outQue.items.map(item => item);
+    console.log('RPN', RPN, rpnArr);
+
+    //Read all the tokens from left to right till you get to an Operator or Function. Knowing that the Operator/Function
+    //takes n arguments (for instance, for +, n = 2; for cos(), n = 1), evaluate the last n preceding arguments with the
+    //Operator/Function, and replace all of them (Operator/Function + operands) with the result. Continue as before, until
+    //there are no more Operators/Functions left to read. The only (Literal or Variable) token left is your answer.
+    let holdArr = [];
+    while (rpnArr.length) {
+        const item = rpnArr.shift();
+        if (item.match(opRegEx) || item.match(funcRegEx)) {
+            if (item.match(opRegEx) && holdArr.length >= 2) {
+                const num1 = holdArr.pop();
+                const num2 = holdArr.pop();
+                rpnArr.unshift(eval(num2 + item + num1));
+            } else if (item.match(funcRegEx) && holdArr.length >= 1) {
+                const num = holdArr.pop();
+                rpnArr.unshift();
+            }
+        } else if (item.match(numRegEx)) {
+            holdArr.push(item);
+        }
+    }
+    //(This is a simplified algorithm, which assumes the expression is valid. A couple indicators that the expression isn’t
+    //valid are if you have more than one token left at the end, or if the last token left is an Operator/Function.)
 };
