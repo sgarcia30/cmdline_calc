@@ -140,19 +140,30 @@ function calc() {
     let holdArr = [];
     while (rpnArr.length) {
         const item = rpnArr.shift();
-        if (item.match(opRegEx) || item.match(funcRegEx)) {
-            if (item.match(opRegEx) && holdArr.length >= 2) {
-                const num1 = holdArr.pop();
-                const num2 = holdArr.pop();
-                rpnArr.unshift(eval(num2 + item + num1));
-            } else if (item.match(funcRegEx) && holdArr.length >= 1) {
-                const num = holdArr.pop();
-                rpnArr.unshift();
-            }
-        } else if (item.match(numRegEx)) {
+        console.log('item', item, typeof item)
+        if (item && (typeof item === 'number' || item.match(numRegEx))) {
             holdArr.push(item);
+        } else if (item && (item.match(opRegEx) || item.match(funcRegEx))) {
+            if (item.match(opRegEx) && holdArr.length >= 2) {
+                const num1 = parseFloat(holdArr.pop());
+                const num2 = parseFloat(holdArr.pop());
+                let result;
+                if (item === '+') result = num2 + num1;
+                else if (item === '-') result = num2 - num1;
+                else if (item === '/' || item === '÷') result = num2 / num1;
+                else if (item === '*' || item === '×') result = num2 * num1;
+                else if (item === '^') result = Math.pow(num1, num2);
+                console.log('result', result);
+                rpnArr.unshift(result);
+                console.log('rpnArr', rpnArr, 'holdArr', holdArr);
+            } else if (item.match(funcRegEx) && holdArr.length >= 1) {
+                console.log('sub else');
+                const num = holdArr.pop();
+                rpnArr.unshift(num);
+            }
         }
     }
+    console.log(holdArr, rpnArr);
     //(This is a simplified algorithm, which assumes the expression is valid. A couple indicators that the expression isn’t
     //valid are if you have more than one token left at the end, or if the last token left is an Operator/Function.)
 };
