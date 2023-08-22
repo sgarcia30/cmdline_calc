@@ -49,7 +49,8 @@ function calc() {
     // Remove extra spaces and replace the unicode minus sign with a regular hyphen
     const cleanedInput = mathFunc.replace(/\s+/g, ' ').replace(/−/g, '-');
     // Define a regular expression to match numbers, operators, and parentheses
-    const tokenPattern = /(?:\d+(?:\.\d+)?|\+|\-|\×|\÷|\^|\(|\))/g;
+    const tokenPattern = /(\d+(\.\d*)?|\.\d+)|([+\-*/%^×÷])|(\b(sin|cos|tan|sqrt|log|ln|asin|acos|atan|abs|round|floor|ceil|max|min)\b)|([\(\)])|(\s+)/g
+    // const tokenPattern = /(?:\d+(?:\.\d+)?|\+|\-|\×|\÷|\*|\/|\^|\(|\))/g;
     // Use the match function to find all matches in the input string
     const tokens = cleanedInput.match(tokenPattern);
 
@@ -64,11 +65,12 @@ function calc() {
     //operator associations and precendence
     const assoc = {  "^" : "right",  "*" : "left",  "/" : "left",  "÷": "left", "×": "left", "+" : "left",  "-" : "left" };
     const prec = {  "^" : 4,  "*" : 3,  "/" : 3, "÷": 3, "×": 3, "+" : 2,  "-" : 2 };
-    
+    console.log(tokens);
     // while there are tokens to be read:
     while (tokens && tokens.length) {
         // read a token
         const elem = tokens.shift();
+        console.log(elem);
         if (elem.match(numRegEx)) {
             // - a number:
             //     put it into the output queue
@@ -82,7 +84,7 @@ function calc() {
             //a. while there is an Operator token o at the top of the operator stack and either t is left-associative 
             // and has precedence is less than or equal to that of o, or t is right associative, and has precedence less
             // than that of o
-            while(operatorStack.peek() && (assoc[elem] === 'left' && prec[elem] <= prec[operatorStack.peek()]) || (assoc[elem] === 'right' && prec[elem] < prec[operatorStack.peek()])) {
+            while (operatorStack.peek() && (assoc[elem] === 'left' && prec[elem] <= prec[operatorStack.peek()]) || (assoc[elem] === 'right' && prec[elem] < prec[operatorStack.peek()])) {
                 //pop o off the operator stack, onto the output queue;
                 outQue.push(operatorStack.pop());
             }
@@ -128,10 +130,9 @@ function calc() {
         // pop the operator from the operator stack onto the output queue
         outQue.push(operatorStack.pop());
     }
-    console.log(outQue, operatorStack);
-    const RPN = outQue.items.join(' ');
+
     const rpnArr = outQue.items.map(item => item);
-    console.log('RPN', RPN, rpnArr);
+    console.log(rpnArr);
 
     //Read all the tokens from left to right till you get to an Operator or Function. Knowing that the Operator/Function
     //takes n arguments (for instance, for +, n = 2; for cos(), n = 1), evaluate the last n preceding arguments with the
@@ -140,30 +141,42 @@ function calc() {
     let holdArr = [];
     while (rpnArr.length) {
         const item = rpnArr.shift();
-        console.log('item', item, typeof item)
         if (item && (typeof item === 'number' || item.match(numRegEx))) {
-            holdArr.push(item);
-        } else if (item && (item.match(opRegEx) || item.match(funcRegEx))) {
-            if (item.match(opRegEx) && holdArr.length >= 2) {
-                const num1 = parseFloat(holdArr.pop());
-                const num2 = parseFloat(holdArr.pop());
-                let result;
-                if (item === '+') result = num2 + num1;
-                else if (item === '-') result = num2 - num1;
-                else if (item === '/' || item === '÷') result = num2 / num1;
-                else if (item === '*' || item === '×') result = num2 * num1;
-                else if (item === '^') result = Math.pow(num1, num2);
-                console.log('result', result);
-                rpnArr.unshift(result);
-                console.log('rpnArr', rpnArr, 'holdArr', holdArr);
-            } else if (item.match(funcRegEx) && holdArr.length >= 1) {
+            holdArr.push(parseFloat(item));
+        } else {
+            if (item && item.match(opRegEx) && holdArr.length >= 2) {
+                const num2 = holdArr.pop();
+                const num1 = holdArr.pop();
+                if (item === '+')  holdArr.push(num1 + num2);
+                else if (item === '-')  holdArr.push(num1 - num2);
+                else if (item === '/' || item === '÷')  holdArr.push(num1 / num2);
+                else if (item === '*' || item === '×')  holdArr.push(num1 * num2);
+                else if (item === '^')  holdArr.push(Math.pow(num1, num2));
+            } else if (item && item.match(funcRegEx) && holdArr.length >= 1) {
                 console.log('sub else');
                 const num = holdArr.pop();
-                rpnArr.unshift(num);
+                if (item === 'sin') holdArr.push(Math.sin(num))
+                else if (item === 'cos') holdArr.push(Math.cos(num))
+                else if (item === 'tan') holdArr.push(Math.tan(num))
+                else if (item === 'asin') holdArr.push(Math.asin(num))
+                else if (item === 'acos') holdArr.push(Math.acos(num))
+                else if (item === 'atan') holdArr.push(Math.atan(num))
+                else if (item === 'abs') holdArr.push(Math.abs(num))
+                else if (item === 'max') holdArr.push(Math.max(num))
+                else if (item === 'min') holdArr.push(Math.min(num))
+                else if (item === 'log') holdArr.push(Math.log(num))
+                else if (item === 'sqrt') holdArr.push(Math.sqrt(num))
+                else if (item === 'floor') holdArr.push(Math.floor(num))
+                else if (item === 'ceil') holdArr.push(Math.ceil(num))
+                else if (item === 'round') holdArr.push(Math.round(num))
             }
         }
     }
     console.log(holdArr, rpnArr);
+    if (holdArr.length === 1) {
+        console.log(holdArr[0].toString());
+        return holdArr[0];
+    }
     //(This is a simplified algorithm, which assumes the expression is valid. A couple indicators that the expression isn’t
     //valid are if you have more than one token left at the end, or if the last token left is an Operator/Function.)
 };
