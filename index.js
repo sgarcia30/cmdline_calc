@@ -65,12 +65,11 @@ function calc() {
     //operator associations and precendence
     const assoc = {  "^" : "right",  "*" : "left",  "/" : "left",  "÷": "left", "×": "left", "+" : "left",  "-" : "left" };
     const prec = {  "^" : 4,  "*" : 3,  "/" : 3, "÷": 3, "×": 3, "+" : 2,  "-" : 2 };
-    console.log(tokens);
+
     // while there are tokens to be read:
     while (tokens && tokens.length) {
         // read a token
         const elem = tokens.shift();
-        console.log(elem);
         if (elem.match(numRegEx)) {
             // - a number:
             //     put it into the output queue
@@ -104,6 +103,7 @@ function calc() {
             // - a right parenthesis (i.e. ")"):
             //     while the operator at the top of the operator stack is not a left parenthesis:
             //         {assert the operator stack is not empty}
+            console.log('peek', operatorStack.peek());
             while(!operatorStack.peek().match(leftParenRegEx)) {
                 // /* If the stack runs out without finding a left parenthesis, then there are mismatched parentheses. */
                 if (operatorStack.isEmpty()) throw Error('Mismatched parenthesis. Input invalid.');
@@ -114,7 +114,9 @@ function calc() {
             if (operatorStack.peek().match(leftParenRegEx)) {
                 // pop the left parenthesis from the operator stack and discard it
                 operatorStack.pop();
-            } else if (operatorStack.peek().match(funcRegEx)) {
+            } 
+            
+            if (operatorStack.peek().match(funcRegEx)) {
                 // if there is a function token at the top of the operator stack, then:
                 // pop the function from the operator stack into the output queue
                 outQue.push(operatorStack.pop());
@@ -153,8 +155,8 @@ function calc() {
                 else if (item === '*' || item === '×')  holdArr.push(num1 * num2);
                 else if (item === '^')  holdArr.push(Math.pow(num1, num2));
             } else if (item && item.match(funcRegEx) && holdArr.length >= 1) {
-                console.log('sub else');
                 const num = holdArr.pop();
+                const num2 = item === 'min' || item === 'max' ? holdArr.pop() : undefined;
                 if (item === 'sin') holdArr.push(Math.sin(num))
                 else if (item === 'cos') holdArr.push(Math.cos(num))
                 else if (item === 'tan') holdArr.push(Math.tan(num))
@@ -162,8 +164,8 @@ function calc() {
                 else if (item === 'acos') holdArr.push(Math.acos(num))
                 else if (item === 'atan') holdArr.push(Math.atan(num))
                 else if (item === 'abs') holdArr.push(Math.abs(num))
-                else if (item === 'max') holdArr.push(Math.max(num))
-                else if (item === 'min') holdArr.push(Math.min(num))
+                else if (item === 'max' && num2) holdArr.push(Math.max(num, num2))
+                else if (item === 'min' && num2) holdArr.push(Math.min(num, num2))
                 else if (item === 'log') holdArr.push(Math.log(num))
                 else if (item === 'sqrt') holdArr.push(Math.sqrt(num))
                 else if (item === 'floor') holdArr.push(Math.floor(num))
@@ -172,7 +174,7 @@ function calc() {
             }
         }
     }
-    console.log(holdArr, rpnArr);
+
     if (holdArr.length === 1) {
         console.log(holdArr[0].toString());
         return holdArr[0];
